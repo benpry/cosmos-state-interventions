@@ -64,6 +64,7 @@ class FrozenLakeGUI:
         self.paused = False
         self.done = False
         self.total_reward = 0
+        self.last_reward = 0  # Track the instant reward from the last action (persists across episodes)
         self.steps = 0
         self.agent_step_delay = 0.5  # seconds between agent actions
         self.last_step_time = time.time()
@@ -76,6 +77,7 @@ class FrozenLakeGUI:
         self.state, _ = self.env.reset()
         self.done = False
         self.total_reward = 0
+        # Don't reset last_reward here - let it persist to show the final reward from previous episode
         self.steps = 0
         self.paused = False
         self.last_step_time = time.time()
@@ -176,7 +178,7 @@ class FrozenLakeGUI:
         self.screen.blit(status_text, status_rect)
 
         # Stats
-        stats = f"Episode: {self.episode_num} Steps: {self.steps}  Reward: {self.total_reward:.1f}"
+        stats = f"Episode: {self.episode_num} Steps: {self.steps}  Total: {self.total_reward:.1f}  Last Reward: {self.last_reward:.1f}"
         stats_text = self.small_font.render(stats, True, self.colors["text"])
         stats_rect = stats_text.get_rect(center=(self.width // 2, info_y + 60))
         self.screen.blit(stats_text, stats_rect)
@@ -248,6 +250,9 @@ class FrozenLakeGUI:
 
                 self.done = terminated or truncated
                 self.total_reward += reward
+                # Only update last_reward if it's non-zero (meaningful reward)
+                if reward != 0:
+                    self.last_reward = reward
                 self.steps += 1
                 self.last_step_time = current_time
 
