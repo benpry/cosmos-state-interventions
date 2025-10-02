@@ -274,8 +274,9 @@ class FrozenLakeGUI:
 if __name__ == "__main__":
     # Create and run the GUI
     rng = np.random.default_rng(123)
+    INTERP_RULE = "impede"
     random_agent = QLearningAgent(
-        interp_rule="impede",
+        interp_rule=INTERP_RULE,
         learning_rate=0.8,
         gamma=0.95,
         state_size=16,
@@ -291,4 +292,4 @@ if __name__ == "__main__":
     game.run()
     final_qtable = random_agent.learning.qtable
     now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    np.save(here(f"data/final_qtable_{now}.npy"), final_qtable)
+    np.save(here(f"data/final_qtable_{INTERP_RULE}_{now}.npy"), final_qtable)
