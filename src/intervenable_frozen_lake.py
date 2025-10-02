@@ -5,6 +5,7 @@ import gymnasium as gym
 import numpy as np
 import pygame
 from pyprojroot import here
+from gymnasium import spaces
 
 from q_learning_agent import Agent, QLearningAgent
 
@@ -19,6 +20,7 @@ class FrozenLakeGUI:
             render_mode="rgb_array",
             reward_schedule=reward_schedule,
         )
+        self.env.action_space = spaces.Discrete(2)  # Left, Right
         self.state, _ = self.env.reset()
         self.reward_schedule = reward_schedule
         self.episode_num = 0
@@ -236,9 +238,11 @@ class FrozenLakeGUI:
             if current_time - self.last_step_time >= self.agent_step_delay:
                 # Get action from policy
                 action = self.agent.choose_action(self.env, self.state)
+                env_action = 2 if action == 1 else 0
+                # Map 0->0 (Left), 1->2 (Right)
 
                 # Take action
-                new_obs, reward, terminated, truncated, _ = self.env.step(action)
+                new_obs, reward, terminated, truncated, _ = self.env.step(env_action)
                 self.agent.update(self.state, action, reward, new_obs)
                 self.state = new_obs
 
@@ -282,7 +286,7 @@ if __name__ == "__main__":
         learning_rate=0.8,
         gamma=0.95,
         state_size=16,
-        action_size=4,
+        action_size=2,
         epsilon=0.1,
         rng=rng,
     )
