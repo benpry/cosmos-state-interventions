@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import NamedTuple
 
 import gymnasium as gym
@@ -21,6 +22,31 @@ class Params(NamedTuple):
     action_size: int  # Number of possible actions
     state_size: int  # Number of possible states
     proba_frozen: float  # Probability that a tile is frozen
+
+
+class Agent(ABC):
+    @abstractmethod
+    def choose_action(self, env, state):
+        pass
+
+    @abstractmethod
+    def update(self, state, action, reward, new_state):
+        pass
+
+    @abstractmethod
+    def handle_intervention(self, state, new_state):
+        pass
+
+
+class RandomAgent(Agent):
+    def choose_action(self, env, state):
+        return env.action_space.sample()
+
+    def update(self, state, action, reward, new_state):
+        pass
+
+    def handle_intervention(self, state, new_state):
+        pass
 
 
 class QLearning:
@@ -243,6 +269,6 @@ if __name__ == "__main__":
     plot_states_actions_distribution(
         states=all_states, actions=all_actions, map_size=params.map_size
     )  # Sanity check
-    plot_q_values_map(qtable, env, params.map_size)
+    plot_q_values_map(qtable, env, map_size=params.map_size)
 
     env.close()

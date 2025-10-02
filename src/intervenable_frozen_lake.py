@@ -4,20 +4,22 @@ import gymnasium as gym
 import numpy as np
 import pygame
 
+from q_learning_agent import Agent, RandomAgent
+
 
 class FrozenLakeGUI:
-    def __init__(self, map_name="4x4", is_slippery=False, agent_policy=None):
+    def __init__(self, map_desc: list, agent: Agent):
         # Initialize environment with rgb_array rendering
         self.env = gym.make(
             "FrozenLake-v1",
-            map_name=map_name,
-            is_slippery=is_slippery,
+            desc=map_desc,
+            is_slippery=False,
             render_mode="rgb_array",
         )
         self.state, _ = self.env.reset()
 
         # Agent policy (function that takes state and returns action)
-        self.agent_policy = agent_policy or self.random_policy
+        self.agent = agent
 
         # Initialize Pygame
         pygame.init()
@@ -91,6 +93,7 @@ class FrozenLakeGUI:
 
     def set_agent_state(self, new_state):
         """Manually set the agent's state"""
+        self.agent.handle_intervention(self.state, new_state)
         self.state = new_state
         # Update the environment's internal state
         self.env.unwrapped.s = new_state
@@ -219,10 +222,13 @@ class FrozenLakeGUI:
             current_time = time.time()
             if current_time - self.last_step_time >= self.agent_step_delay:
                 # Get action from policy
-                action = self.agent_policy(self.state)
+                action = self.agent.choose_action(self.env, self.state)
 
                 # Take action
-                self.state, reward, terminated, truncated, _ = self.env.step(action)
+                new_obs, reward, terminated, truncated, _ = self.env.step(action)
+                self.agent.update(self.state, action, reward, new_obs)
+                self.state = new_obs
+
                 self.done = terminated or truncated
                 self.total_reward += reward
                 self.steps += 1
@@ -248,37 +254,12 @@ class FrozenLakeGUI:
         self.env.close()
 
 
-def example_trained_policy(state):
-    """Example: A simple policy that tries to go right then down"""
-    # This is just a demonstration - replace with your actual RL policy
-    # For a 4x4 grid, this policy tries to reach the goal
-    policy_map = {
-        0: 1,
-        1: 1,
-        2: 1,
-        3: 1,  # Row 0: go down
-        4: 2,
-        5: 1,
-        6: 1,
-        7: 1,  # Row 1: first cell right, others down
-        8: 2,
-        9: 2,
-        10: 1,
-        11: 1,  # Row 2: go right/down
-        12: 2,
-        13: 2,
-        14: 2,
-        15: 2,  # Row 3: go right
-    }
-    return policy_map.get(state, 0)
-
-
 if __name__ == "__main__":
     # Create and run the GUI
     # You can pass your own policy function here
+    random_agent = RandomAgent()
     game = FrozenLakeGUI(
-        map_name="4x4",
-        is_slippery=False,
-        agent_policy=example_trained_policy,  # Replace with your RL agent
+        map_desc=["HSFFFFFFFFFFFG"],
+        agent=random_agent,  # Replace with your RL agent
     )
     game.run()
