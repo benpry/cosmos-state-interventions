@@ -21,6 +21,7 @@ class FrozenLakeGUI:
         )
         self.state, _ = self.env.reset()
         self.reward_schedule = reward_schedule
+        self.episode_num = 0
 
         # Agent policy (function that takes state and returns action)
         self.agent = agent
@@ -173,7 +174,7 @@ class FrozenLakeGUI:
         self.screen.blit(status_text, status_rect)
 
         # Stats
-        stats = f"Steps: {self.steps}  Reward: {self.total_reward:.1f}"
+        stats = f"Episode: {self.episode_num} Steps: {self.steps}  Reward: {self.total_reward:.1f}"
         stats_text = self.small_font.render(stats, True, self.colors["text"])
         stats_rect = stats_text.get_rect(center=(self.width // 2, info_y + 60))
         self.screen.blit(stats_text, stats_rect)
@@ -247,6 +248,7 @@ class FrozenLakeGUI:
                 self.last_step_time = current_time
 
             if self.done:
+                self.episode_num += 1
                 self.reset()
 
     def run(self):
