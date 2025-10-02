@@ -24,7 +24,6 @@ def reset(qtable, state, reward, new_state, action, learning_rate):
 
 def interrupt(qtable, state, reward, new_state, action, learning_rate):
     # ignore the timestep entirely
-    print("handling interruption (by doing nothing)")
     return qtable
 
 

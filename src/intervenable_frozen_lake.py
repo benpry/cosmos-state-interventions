@@ -1,8 +1,10 @@
 import time
+from datetime import datetime
 
 import gymnasium as gym
 import numpy as np
 import pygame
+from pyprojroot import here
 
 from q_learning_agent import Agent, QLearningAgent
 
@@ -199,6 +201,9 @@ class FrozenLakeGUI:
                     if not self.paused:
                         self.last_step_time = time.time()
 
+                elif event.key == pygame.K_x:
+                    self.running = False
+
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:  # Left click
                     row, col = self.is_cell_clicked(event.pos)
@@ -250,6 +255,8 @@ class FrozenLakeGUI:
 
         while self.running:
             self.handle_input()
+            if not self.running:
+                break
             self.agent_step()
 
             # Draw
@@ -258,7 +265,7 @@ class FrozenLakeGUI:
             self.draw_info()
 
             pygame.display.flip()
-            clock.tick(600)  # 60 FPS
+            clock.tick(60)  # 60 FPS
 
         pygame.quit()
         self.env.close()
@@ -277,8 +284,11 @@ if __name__ == "__main__":
         rng=rng,
     )
     game = FrozenLakeGUI(
-        map_desc=["HSFFFFFFFFFFFG"],
+        map_desc=["HFSFFFFFFFFFFG"],
         agent=random_agent,  # Replace with your RL agent
         reward_schedule=(10, 5, 0),
     )
     game.run()
+    final_qtable = random_agent.learning.qtable
+    now = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    np.save(here(f"data/final_qtable_{now}.npy"), final_qtable)

@@ -207,7 +207,6 @@ class QLearningAgent(Agent):
 
     def handle_intervention(self, env, state, reward, new_state):
         chosen_action = self.choose_action(env, state)
-        print(f"q table before intervention: {self.learning.qtable}")
         self.learning.qtable = self.interp_rule(
             self.learning.qtable,
             state,
@@ -216,7 +215,6 @@ class QLearningAgent(Agent):
             chosen_action,
             self.learning_rate,
         )
-        print(f"q table after intervention: {self.learning.qtable}")
 
 
 if __name__ == "__main__":
