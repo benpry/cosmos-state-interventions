@@ -4,7 +4,7 @@ import numpy as np
 def suggestion(qtable, state, reward, new_state, action, learning_rate):
     # update q value for action closest to the intervention
     if new_state > state:
-        action = 2
+        action = 1
     else:
         action = 0
 
