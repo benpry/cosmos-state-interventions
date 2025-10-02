@@ -64,8 +64,9 @@ class QLearning:
             + self.gamma * np.max(self.qtable[new_state, :])
             - self.qtable[state, action]
         )
-        q_update = self.qtable[state, action] + self.learning_rate * delta
-        return q_update
+        self.qtable[state, action] = (
+            self.qtable[state, action] + self.learning_rate * delta
+        )
 
     def reset_qtable(self):
         """Reset the Q-table."""
@@ -73,16 +74,18 @@ class QLearning:
 
 
 class EpsilonGreedy:
-    def __init__(self, epsilon):
+    def __init__(self, epsilon, rng):
         self.epsilon = epsilon
+        self.rng = rng
 
     def choose_action(self, action_space, state, qtable):
         """Choose an action `a` in the current world state (s)."""
         # First we randomize a number
-        explor_exploit_tradeoff = rng.uniform(0, 1)
+        explor_exploit_tradeoff = self.rng.uniform(0, 1)
 
         # Exploration
         if explor_exploit_tradeoff < self.epsilon:
+            print("exploring")
             action = action_space.sample()
 
         # Exploitation (taking the biggest Q-value for this state)
@@ -91,7 +94,8 @@ class EpsilonGreedy:
             # Find the indices where the Q-value equals the maximum value
             # Choose a random action from the indices where the Q-value is maximum
             max_ids = np.where(qtable[state, :] == max(qtable[state, :]))[0]
-            action = rng.choice(max_ids)
+            action = self.rng.choice(max_ids)
+            print(f"exploiting {action}")
         return action
 
 
@@ -171,6 +175,36 @@ def plot_states_actions_distribution(states, actions, map_size):
     ax[1].set_title("Actions")
     fig.tight_layout()
     plt.show()
+
+
+class QLearningAgent(Agent):
+    def __init__(self, learning_rate, gamma, state_size, action_size, epsilon, rng):
+        self.learning_rate = learning_rate
+        self.gamma = gamma
+        self.state_size = state_size
+        self.action_size = action_size
+        self.qtable = np.zeros((state_size, action_size))
+        self.rng = rng
+
+        self.action_selection = EpsilonGreedy(epsilon=epsilon, rng=self.rng)
+        self.learning = QLearning(
+            learning_rate=learning_rate,
+            gamma=gamma,
+            state_size=state_size,
+            action_size=action_size,
+        )
+
+    def choose_action(self, env, state):
+        return self.action_selection.choose_action(
+            env.action_space, state, self.learning.qtable
+        )
+
+    def update(self, state, action, reward, new_state):
+        self.learning.update(state, action, reward, new_state)
+        print(f"updated q table to {self.learning.qtable}")
+
+    def handle_intervention(self, state, new_state):
+        pass
 
 
 if __name__ == "__main__":

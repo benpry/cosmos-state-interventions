@@ -4,7 +4,7 @@ import gymnasium as gym
 import numpy as np
 import pygame
 
-from q_learning_agent import Agent, RandomAgent
+from q_learning_agent import Agent, QLearningAgent
 
 
 class FrozenLakeGUI:
@@ -65,9 +65,13 @@ class FrozenLakeGUI:
         self.dragging = False
         self.drag_start_state = None
 
-    def random_policy(self, state):
-        """Default random policy"""
-        return self.env.action_space.sample()
+    def reset(self):
+        self.state, _ = self.env.reset()
+        self.done = False
+        self.total_reward = 0
+        self.steps = 0
+        self.paused = False
+        self.last_step_time = time.time()
 
     def get_agent_pos(self):
         """Convert state to (row, col) position"""
@@ -179,12 +183,7 @@ class FrozenLakeGUI:
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     # Reset
-                    self.state, _ = self.env.reset()
-                    self.done = False
-                    self.total_reward = 0
-                    self.steps = 0
-                    self.paused = False
-                    self.last_step_time = time.time()
+                    self.reset()
 
                 elif event.key == pygame.K_SPACE:
                     # Toggle pause
@@ -234,6 +233,9 @@ class FrozenLakeGUI:
                 self.steps += 1
                 self.last_step_time = current_time
 
+            if self.done:
+                self.reset()
+
     def run(self):
         """Main game loop"""
         clock = pygame.time.Clock()
@@ -248,7 +250,7 @@ class FrozenLakeGUI:
             self.draw_info()
 
             pygame.display.flip()
-            clock.tick(60)  # 60 FPS
+            clock.tick(600)  # 60 FPS
 
         pygame.quit()
         self.env.close()
@@ -256,8 +258,15 @@ class FrozenLakeGUI:
 
 if __name__ == "__main__":
     # Create and run the GUI
-    # You can pass your own policy function here
-    random_agent = RandomAgent()
+    rng = np.random.default_rng(123)
+    random_agent = QLearningAgent(
+        learning_rate=0.8,
+        gamma=0.95,
+        state_size=16,
+        action_size=4,
+        epsilon=0.1,
+        rng=rng,
+    )
     game = FrozenLakeGUI(
         map_desc=["HSFFFFFFFFFFFG"],
         agent=random_agent,  # Replace with your RL agent
