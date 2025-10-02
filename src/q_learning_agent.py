@@ -9,6 +9,8 @@ import seaborn as sns
 from gymnasium.envs.toy_text.frozen_lake import generate_random_map
 from tqdm import tqdm
 
+from interpretation_rules import INTERP_RULES
+
 
 class Params(NamedTuple):
     total_episodes: int  # Total episodes
@@ -85,7 +87,6 @@ class EpsilonGreedy:
 
         # Exploration
         if explor_exploit_tradeoff < self.epsilon:
-            print("exploring")
             action = action_space.sample()
 
         # Exploitation (taking the biggest Q-value for this state)
@@ -95,7 +96,6 @@ class EpsilonGreedy:
             # Choose a random action from the indices where the Q-value is maximum
             max_ids = np.where(qtable[state, :] == max(qtable[state, :]))[0]
             action = self.rng.choice(max_ids)
-            print(f"exploiting {action}")
         return action
 
 
@@ -178,13 +178,16 @@ def plot_states_actions_distribution(states, actions, map_size):
 
 
 class QLearningAgent(Agent):
-    def __init__(self, learning_rate, gamma, state_size, action_size, epsilon, rng):
+    def __init__(
+        self, interp_rule, learning_rate, gamma, state_size, action_size, epsilon, rng
+    ):
         self.learning_rate = learning_rate
         self.gamma = gamma
         self.state_size = state_size
         self.action_size = action_size
         self.qtable = np.zeros((state_size, action_size))
         self.rng = rng
+        self.interp_rule = INTERP_RULES[interp_rule]
 
         self.action_selection = EpsilonGreedy(epsilon=epsilon, rng=self.rng)
         self.learning = QLearning(
@@ -201,10 +204,19 @@ class QLearningAgent(Agent):
 
     def update(self, state, action, reward, new_state):
         self.learning.update(state, action, reward, new_state)
-        print(f"updated q table to {self.learning.qtable}")
 
-    def handle_intervention(self, state, new_state):
-        pass
+    def handle_intervention(self, env, state, reward, new_state):
+        chosen_action = self.choose_action(env, state)
+        print(f"q table before intervention: {self.learning.qtable}")
+        self.learning.qtable = self.interp_rule(
+            self.learning.qtable,
+            state,
+            reward,
+            new_state,
+            chosen_action,
+            self.learning_rate,
+        )
+        print(f"q table after intervention: {self.learning.qtable}")
 
 
 if __name__ == "__main__":
@@ -293,8 +305,6 @@ if __name__ == "__main__":
             rewards[episode, run] = total_rewards
             steps[episode, run] = step
         qtables[run, :, :] = learner.qtable
-
-    print(rewards, steps, episodes, qtables, all_states, all_actions)
 
     # Save the results in dataframes
     res, st = postprocess(episodes, params, rewards, steps, params.map_size)

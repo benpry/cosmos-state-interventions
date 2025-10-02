@@ -8,15 +8,17 @@ from q_learning_agent import Agent, QLearningAgent
 
 
 class FrozenLakeGUI:
-    def __init__(self, map_desc: list, agent: Agent):
+    def __init__(self, map_desc: list, agent: Agent, reward_schedule: tuple):
         # Initialize environment with rgb_array rendering
         self.env = gym.make(
             "FrozenLake-v1",
             desc=map_desc,
             is_slippery=False,
             render_mode="rgb_array",
+            reward_schedule=reward_schedule,
         )
         self.state, _ = self.env.reset()
+        self.reward_schedule = reward_schedule
 
         # Agent policy (function that takes state and returns action)
         self.agent = agent
@@ -97,7 +99,13 @@ class FrozenLakeGUI:
 
     def set_agent_state(self, new_state):
         """Manually set the agent's state"""
-        self.agent.handle_intervention(self.state, new_state)
+        # get the reward we would get from transitioning to the new state
+        # int to x-y coordinates
+        x, y = divmod(new_state, self.ncol)
+        reward = self.reward_schedule[
+            b"GHF".index(self.desc[x][y] if self.desc[x][y] in b"GHF" else b"F")
+        ]
+        self.agent.handle_intervention(self.env, self.state, reward, new_state)
         self.state = new_state
         # Update the environment's internal state
         self.env.unwrapped.s = new_state
@@ -260,6 +268,7 @@ if __name__ == "__main__":
     # Create and run the GUI
     rng = np.random.default_rng(123)
     random_agent = QLearningAgent(
+        interp_rule="impede",
         learning_rate=0.8,
         gamma=0.95,
         state_size=16,
@@ -270,5 +279,6 @@ if __name__ == "__main__":
     game = FrozenLakeGUI(
         map_desc=["HSFFFFFFFFFFFG"],
         agent=random_agent,  # Replace with your RL agent
+        reward_schedule=(10, 5, 0),
     )
     game.run()
